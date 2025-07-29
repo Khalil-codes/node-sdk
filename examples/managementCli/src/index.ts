@@ -24,7 +24,7 @@ function handleSdkRes(res: SdkResponse<any>, responseFile?: string) {
 
 const DESCOPE_PROJECT_ID = process.env.DESCOPE_PROJECT_ID as string;
 const DESCOPE_MANAGEMENT_KEY = process.env.DESCOPE_MANAGEMENT_KEY as string;
-const DESCOPE_API_BASE_URL = (process.env.DESCOPE_API_BASE_URL as string) || undefined;
+const DESCOPE_BASE_URL = (process.env.DESCOPE_BASE_URL as string) || undefined;
 
 if (!DESCOPE_PROJECT_ID || !DESCOPE_MANAGEMENT_KEY) {
   console.error('Missing DESCOPE_PROJECT_ID or DESCOPE_MANAGEMENT_KEY environment variables');
@@ -33,7 +33,7 @@ if (!DESCOPE_PROJECT_ID || !DESCOPE_MANAGEMENT_KEY) {
 
 const sdk = DescopeClient({
   projectId: DESCOPE_PROJECT_ID,
-  baseUrl: DESCOPE_API_BASE_URL,
+  baseUrl: DESCOPE_BASE_URL,
   managementKey: DESCOPE_MANAGEMENT_KEY,
   logger: console,
 });
@@ -271,6 +271,14 @@ program
   .argument('<name>', 'Project name')
   .action(async (name) => {
     handleSdkRes(await sdk.management.project.updateName(name));
+  });
+
+// list-projects
+program
+  .command('list-projects')
+  .description('List projects')
+  .action(async () => {
+    handleSdkRes(await sdk.management.project.listProjects());
   });
 
 // project-update-tags
@@ -578,6 +586,99 @@ program
     handleSdkRes(await sdk.management.inboundApplication.deleteConsents({ appId }));
   });
 
+// *** Outbound application commands ***
+
+// outbound-application-create
+program
+  .command('outbound-application-create')
+  .description('Create a new outbound application')
+  .argument('<name>', 'Outbound application name')
+  .action(async (name) => {
+    handleSdkRes(await sdk.management.outboundApplication.createApplication({ name }));
+  });
+
+// outbound-application-update
+program
+  .command('outbound-application-update')
+  .description('Update an outbound application')
+  .argument('<id>', 'Outbound application ID')
+  .argument('<name>', 'Outbound application name')
+  .action(async (id, name) => {
+    handleSdkRes(await sdk.management.outboundApplication.updateApplication({ id, name }));
+  });
+
+// outbound-application-load
+program
+  .command('outbound-application-load')
+  .description('Load outbound application by id')
+  .argument('<id>', 'Outbound application ID')
+  .action(async (id) => {
+    handleSdkRes(await sdk.management.outboundApplication.loadApplication(id));
+  });
+
+// outbound-application-load-all
+program
+  .command('outbound-application-load-all')
+  .description('Load all outbound applications')
+  .action(async () => {
+    handleSdkRes(await sdk.management.outboundApplication.loadAllApplications());
+  });
+
+// outbound-application-delete
+program
+  .command('outbound-application-delete')
+  .description('Delete an outbound application')
+  .argument('<id>', 'Outbound application ID')
+  .action(async (id) => {
+    handleSdkRes(await sdk.management.outboundApplication.deleteApplication(id));
+  });
+
+// outbound-application-fetch-token
+program
+  .command('outbound-application-fetch-token')
+  .description('Fetch token for an outbound application')
+  .argument('<app-id>', 'Outbound application ID')
+  .argument('<user-id>', 'User ID')
+  .action(async (appId, userId) => {
+    handleSdkRes(await sdk.management.outboundApplication.fetchToken(appId, userId));
+  });
+
+// outbound-application-fetch-token-by-scopes
+program
+  .command('outbound-application-fetch-token-by-scopes')
+  .description('Fetch token by scopes for an outbound application')
+  .argument('<app-id>', 'Outbound application ID')
+  .argument('<user-id>', 'User ID')
+  .argument('<scopes>', 'Scopes to fetch token for', (val) => val?.split(','))
+  .action(async (appId, userId, scopes) => {
+    handleSdkRes(
+      await sdk.management.outboundApplication.fetchTokenByScopes(appId, userId, scopes),
+    );
+  });
+
+// outbound-application-fetch-tenant-token
+program
+  .command('outbound-application-fetch-tenant-token')
+  .description('Fetch token for an outbound application for a tenant')
+  .argument('<app-id>', 'Outbound application ID')
+  .argument('<tenant-id>', 'Tenant ID')
+  .action(async (appId, tenantId) => {
+    handleSdkRes(await sdk.management.outboundApplication.fetchTenantToken(appId, tenantId));
+  });
+
+// outbound-application-fetch-tenant-token-by-scopes
+program
+  .command('outbound-application-fetch-tenant-token-by-scopes')
+  .description('Fetch token by scopes for an outbound application for a tenant')
+  .argument('<app-id>', 'Outbound application ID')
+  .argument('<tenant-id>', 'Tenant ID')
+  .argument('<scopes>', 'Scopes to fetch token for', (val) => val?.split(','))
+  .action(async (appId, tenantId, scopes) => {
+    handleSdkRes(
+      await sdk.management.outboundApplication.fetchTenantTokenByScopes(appId, tenantId, scopes),
+    );
+  });
+
 // *** SSO application commands ***
 
 // sso-application-create-oidc
@@ -848,6 +949,34 @@ program
       return;
     }
     handleSdkRes(await sdk.management.flow.import(flowId, flow, screens));
+  });
+
+// flow-run
+program
+  .command('flow-run')
+  .description('Run a flow')
+  .argument('<flow-id>', 'Flow ID')
+  .option('-i, --input <input>', 'Input object as JSON string')
+  .action(async (flowId, options) => {
+    let input = {};
+
+    if (options.input) {
+      try {
+        input = JSON.parse(options.input);
+      } catch (error) {
+        console.error(
+          'Invalid JSON input:',
+          error instanceof Error ? error.message : String(error),
+        );
+        return;
+      }
+    }
+
+    handleSdkRes(
+      await sdk.management.flow.run(flowId, {
+        input,
+      }),
+    );
   });
 
 // *** Theme commands ***

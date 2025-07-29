@@ -717,6 +717,7 @@ await descopeClient.management.user.invite('desmond@descope.com', {
 // Make sure to configure the invite URL in the Descope console prior to using this function,
 // and that an email address / phone number is provided in the information. You can also set
 // a cleartext password or import a prehashed one from another service.
+// Note: This function will send an invitation to each user in the `users` array. If you want to create users without sending invitations, use `createBatch` instead.
 await descopeClient.management.user.inviteBatch(
   [
     {
@@ -736,6 +737,25 @@ await descopeClient.management.user.inviteBatch(
   true,
   false,
 );
+
+// Create a batch of users.
+// This is useful when you want to create users programmatically without triggering the invitation flow.
+// You can set a cleartext password or import a prehashed one from another service.
+// Note: This function will NOT send an invitation to the created users. If invitations are required use `inviteBatch` instead.
+await descopeClient.management.user.createBatch([
+  {
+    loginId: 'desmond@descope.com',
+    email: 'desmond@descope.com',
+    phone: '+123456789123',
+    displayName: 'Desmond Copeland',
+    userTenants: [{ tenantId: 'tenant-ID1', roleNames: ['role-name1'] }],
+    hashedPassword: {
+      bcrypt: {
+        hash: '$2a$...',
+      },
+    },
+  },
+]);
 
 // Update will override all fields as is. Use carefully.
 await descopeClient.management.user.update('desmond@descope.com', {
@@ -1083,6 +1103,21 @@ updatedRes.data.screens.forEach((screen) => {
   // do something
 });
 
+// Run a management Flow
+// Note: Flow must be a management flow, not an interactive flow
+const runRes = await descopeClient.management.flow.run('management-flow-id');
+console.log('flow result', runRes.data); // The result data will contain the flow's output, which is configured in the 'End' step of the flow
+
+// Run a management Flow with input
+// Note: Flow must be a management flow, not an interactive flow
+const runWithInputRes = await descopeClient.management.flow.run('management-flow-id', {
+  input: {
+    key1: 'value1',
+  },
+});
+console.log('flow with input result', runWithInputRes.data); // The result data will contain the flow's output, which is configured in the 'End' step of the flow
+```
+
 // Export the current theme of the project
 const res = descopeClient.management.theme.export();
 console.log(res.data.theme);
@@ -1090,7 +1125,8 @@ console.log(res.data.theme);
 // Import the given theme to the project
 const updatedRes = descopeClient.management.theme.import(theme);
 console.log(updatedRes.data.theme);
-```
+
+````
 
 ### Manage JWTs
 
@@ -1101,9 +1137,9 @@ const updatedJWTRes = await descopeClient.management.jwt.update('original-jwt', 
   customKey1: 'custom-value1',
   customKey2: 'custom-value2',
 });
-```
+````
 
-Generate a JWT for a user, simulating a signin request.
+Generate a JWT for a user, simulating a sign in request.
 
 ```typescript
 const res = await descopeClient.management.jwt.signIn('dummy');
@@ -1300,7 +1336,7 @@ const userToken = await descopeClient.management.outboundApplication.fetchTokenB
   'my-app-id',
   'user-id',
   ['read', 'write'],
-  { refreshToken: true },
+  { withRefreshToken: false },
   'tenant-id'
 );
 
@@ -1309,7 +1345,7 @@ const latestUserToken = await descopeClient.management.outboundApplication.fetch
   'my-app-id',
   'user-id',
   'tenant-id',
-  { forceRefresh: true }
+  { forceRefresh: false }
 );
 
 // Fetch tenant token with specific scopes
@@ -1317,14 +1353,14 @@ const tenantToken = await descopeClient.management.outboundApplication.fetchTena
   'my-app-id',
   'tenant-id',
   ['read', 'write'],
-  { refreshToken: true }
+  { withRefreshToken: false }
 );
 
 // Fetch latest tenant token
 const latestTenantToken = await descopeClient.management.outboundApplication.fetchTenantToken(
   'my-app-id',
   'tenant-id',
-  { forceRefresh: true }
+  { forceRefresh: false }
 );
 ```
 

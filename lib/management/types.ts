@@ -320,6 +320,10 @@ export type FlowResponse = {
   screens: Screen[];
 };
 
+export type RunManagementFlowResponse = {
+  output: Record<string, any>;
+};
+
 export type Theme = {
   id: string;
   cssTemplate?: any;
@@ -549,7 +553,7 @@ export type UserFailedResponse = {
   user: UserResponse;
 };
 
-export type InviteBatchResponse = {
+export type CreateOrInviteBatchResponse = {
   createdUsers: UserResponse[];
   failedUsers: UserFailedResponse[];
   additionalErrors: Record<string, string>;
@@ -953,16 +957,21 @@ export type URLParam = {
 };
 
 export type FetchOutboundAppTokenOptions = {
-  refreshToken?: boolean;
+  withRefreshToken?: boolean;
   forceRefresh?: boolean;
 };
 
 export type OutboundAppToken = {
-  token: string;
+  id: string;
+  appId: string;
+  userId: string;
+  tenantId?: string;
+  accessToken: string;
+  accessTokenExpiry?: number;
   refreshToken?: string;
-  expiresIn?: number;
-  tokenType?: string;
+  hasRefreshToken?: boolean;
   scopes?: string[];
+  grantedBy?: string;
 };
 
 export type FetchOutboundAppUserTokenRequest = {
@@ -995,4 +1004,9 @@ export type FetchLatestOutboundAppTenantTokenRequest = {
   appId: string;
   tenantId: string;
   options?: FetchOutboundAppTokenOptions;
+};
+
+export type ManagementFlowOptions = {
+  input?: Record<string, any>;
+  preview?: boolean;
 };
